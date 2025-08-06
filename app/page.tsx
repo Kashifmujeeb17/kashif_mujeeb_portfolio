@@ -4,31 +4,8 @@ import { useState, useEffect, useRef, useCallback } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import {
-  Mail,
-  Github,
-  Linkedin,
-  Brain,
-  Code,
-  TrendingUp,
-  ChevronDown,
-  Menu,
-  X,
-  ArrowRight,
-  Target,
-  GraduationCap,
-  BarChart3,
-  Network,
-  FileText,
-  Users,
-  UserCheck,
-  Rocket,
-  Cpu,
-  Zap,
-  BookOpen,
-  Star,
-} from "lucide-react"
-import { useInView } from "@/hooks/useInView" // Import the new hook
+import { Github, Linkedin, Brain, Code, TrendingUp, ChevronDown, Menu, X, ArrowRight, Target, GraduationCap, BarChart3, Network, FileText, Users, UserCheck, Rocket, Cpu, Zap, BookOpen, Star, Mail, Book } from 'lucide-react'
+import { useInView } from "@/hooks/useInView"
 
 export default function EnhancedKashifPortfolio() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
@@ -39,24 +16,27 @@ export default function EnhancedKashifPortfolio() {
   const [isHovering, setIsHovering] = useState(false)
   const [scrollY, setScrollY] = useState(0)
   const [typingText, setTypingText] = useState("")
-  const [currentTextIndex, setCurrentTextIndex] = useState(0)
-  const [charIndex, setCharIndex] = useState(0) // New state for current character index
-  const [isDeleting, setIsDeleting] = useState(false) // New state for typing/deleting mode
   const [glowIntensity, setGlowIntensity] = useState(0.5)
   const [currentTime, setCurrentTime] = useState(new Date())
 
+  // Refs for internal animation state
+  const currentTextIndexRef = useRef(0)
+  const charIndexRef = useRef(0)
+  const isDeletingRef = useRef(false)
+  const animationTimerRef = useRef<NodeJS.Timeout | null>(null)
+
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const heroRef = useRef<HTMLDivElement>(null)
-  const animationFrameRef = useRef<number>()
+  const particlesAnimationRef = useRef<number>()
   const particlesRef = useRef<
     Array<{ id: number; x: number; y: number; size: number; opacity: number; vx: number; vy: number }>
   >([])
-  const floatingElementsRef = useRef<Array<{ id: number; x: number; y: number; rotation: number; scale: number }>>([])
+  const floatingElementsRef = useRef<Array<{ id: number; x: number; y: number; rotation: number; scale: number }>>()
 
   // Refs for scroll animations
   const [aboutRef, aboutInView] = useInView({ threshold: 0.2 })
   const [skillsRef, skillsInView] = useInView({ threshold: 0.2 })
-  const [experienceRef, experienceInView] = useInView({ threshold: 0.2 }) // New ref for experience
+  const [experienceRef, experienceInView] = useInView({ threshold: 0.2 })
   const [projectsRef, projectsInView] = useInView({ threshold: 0.2 })
   const [contactRef, contactInView] = useInView({ threshold: 0.2 })
 
@@ -87,7 +67,7 @@ export default function EnhancedKashifPortfolio() {
   const initializeFloatingElements = useCallback(() => {
     if (typeof window === "undefined") return
 
-    const elements = Array.from({ length: 12 }, (_, i) => ({
+    const elements = Array.from({ length: 20 }, (_, i) => ({
       id: i,
       x: Math.random() * window.innerWidth,
       y: Math.random() * window.innerHeight,
@@ -154,7 +134,7 @@ export default function EnhancedKashifPortfolio() {
         ctx.fill()
       })
 
-      animationFrameRef.current = requestAnimationFrame(animate)
+      particlesAnimationRef.current = requestAnimationFrame(animate)
     }
 
     animate()
@@ -168,8 +148,8 @@ export default function EnhancedKashifPortfolio() {
     animateCanvas()
 
     return () => {
-      if (animationFrameRef.current) {
-        cancelAnimationFrame(animationFrameRef.current)
+      if (particlesAnimationRef.current) {
+        cancelAnimationFrame(particlesAnimationRef.current)
       }
     }
   }, [initializeParticles, initializeFloatingElements, animateCanvas])
@@ -187,44 +167,46 @@ export default function EnhancedKashifPortfolio() {
 
   // Typing animation logic
   useEffect(() => {
-    const currentText = typingTexts[currentTextIndex]
-    let timer: NodeJS.Timeout
+    const type = () => {
+      const currentText = typingTexts[currentTextIndexRef.current]
+      const currentLength = charIndexRef.current
 
-    const handleTyping = () => {
-      if (!isDeleting) {
+      if (!isDeletingRef.current) {
         // Typing
-        if (charIndex < currentText.length) {
-          setTypingText(currentText.substring(0, charIndex + 1))
-          setCharIndex((prev) => prev + 1)
-          timer = setTimeout(handleTyping, 80) // Typing speed
+        if (currentLength < currentText.length) {
+          setTypingText(currentText.substring(0, currentLength + 1))
+          charIndexRef.current = currentLength + 1
+          animationTimerRef.current = setTimeout(type, 80)
         } else {
           // Done typing, wait before deleting
-          timer = setTimeout(() => setIsDeleting(true), 3000) // Pause before deleting
+          isDeletingRef.current = true
+          animationTimerRef.current = setTimeout(type, 3000)
         }
       } else {
         // Deleting
-        if (charIndex > 0) {
-          setTypingText(currentText.substring(0, charIndex - 1))
-          setCharIndex((prev) => prev - 1)
-          timer = setTimeout(handleTyping, 30) // Deleting speed
+        if (currentLength > 0) {
+          setTypingText(currentText.substring(0, currentLength - 1))
+          charIndexRef.current = currentLength - 1
+          animationTimerRef.current = setTimeout(type, 30)
         } else {
           // Done deleting, switch to next text
-          setIsDeleting(false)
-          setCurrentTextIndex((prev) => (prev + 1) % typingTexts.length)
-          // Reset charIndex for the new text (will be handled by next useEffect run)
-          setCharIndex(0)
+          isDeletingRef.current = false
+          currentTextIndexRef.current = (currentTextIndexRef.current + 1) % typingTexts.length
+          charIndexRef.current = 0
+          animationTimerRef.current = setTimeout(type, 500) // Small delay before starting next text
         }
       }
     }
 
-    // Start the animation cycle
-    handleTyping()
+    type() // Start the animation
 
     // Cleanup function
     return () => {
-      clearTimeout(timer)
+      if (animationTimerRef.current) {
+        clearTimeout(animationTimerRef.current)
+      }
     }
-  }, [charIndex, currentTextIndex, isDeleting, typingTexts]) // Dependencies for useEffect
+  }, [typingTexts]) // Only re-run if typingTexts array changes
 
   // Scroll and mouse handlers
   useEffect(() => {
@@ -268,19 +250,21 @@ export default function EnhancedKashifPortfolio() {
       })
 
       // Update floating elements
-      floatingElementsRef.current = floatingElementsRef.current.map((element) => ({
-        ...element,
-        rotation: element.rotation + 0.5,
-        x: element.x + Math.sin(Date.now() * 0.001 + element.id) * 0.1,
-        y: element.y + Math.cos(Date.now() * 0.001 + element.id) * 0.1,
-      }))
+      if (floatingElementsRef.current) {
+        floatingElementsRef.current = floatingElementsRef.current.map((element) => ({
+          ...element,
+          rotation: element.rotation + 0.5,
+          x: element.x + Math.sin(Date.now() * 0.001 + element.id) * 0.1,
+          y: element.y + Math.cos(Date.now() * 0.001 + element.id) * 0.1,
+        }))
+      }
     }
 
     window.addEventListener("scroll", handleScroll)
     window.addEventListener("mousemove", handleMouseMove)
 
     return () => {
-      window.removeEventListener("scroll", handleScroll)
+      window.removeEventListener("scroll", handleMouseMove)
       window.removeEventListener("mousemove", handleMouseMove)
     }
   }, [])
@@ -383,7 +367,7 @@ export default function EnhancedKashifPortfolio() {
     {
       title: "Science & Engineering Associate",
       organization: "Current Role - HR AI Engineer",
-      year: "2024",
+      year: "2025",
       icon: Rocket,
       color: "from-green-500 to-emerald-600",
       description: "AI Engineer in HR Department",
@@ -516,38 +500,44 @@ export default function EnhancedKashifPortfolio() {
       {/* Advanced Background Elements */}
       <div className="absolute inset-0 overflow-hidden">
         {/* Animated gradient meshes */}
-        <div className="absolute -top-1/2 -right-1/2 w-full h-full bg-gradient-to-br from-blue-500/20 via-purple-500/15 to-indigo-500/20 rounded-full mix-blend-multiply filter blur-3xl animate-pulse transform rotate-12"></div>
+        <div className="absolute -top-1/2 -right-1/2 w-full h-full bg-gradient-to-br from-blue-500/20 via-purple-500/15 to-indigo-500/20 rounded-full mix-blend-multiply filter blur-3xl animate-pulse transform rotate-12" />
         <div
           className="absolute -bottom-1/2 -left-1/2 w-full h-full bg-gradient-to-tr from-cyan-500/20 via-blue-500/15 to-purple-500/20 rounded-full mix-blend-multiply filter blur-3xl animate-pulse transform -rotate-12"
           style={{ animationDelay: "1s" }}
-        ></div>
+        />
+        {/* New gradient mesh */}
+        <div
+          className="absolute top-1/3 left-1/3 w-80 h-80 bg-gradient-to-tl from-pink-500/15 via-red-500/10 to-orange-500/15 rounded-full mix-blend-multiply filter blur-3xl animate-pulse transform rotate-45"
+          style={{ animationDelay: "2.5s" }}
+        />
         <div
           className="absolute top-1/4 left-1/4 w-96 h-96 bg-gradient-to-r from-purple-500/10 via-pink-500/10 to-indigo-500/10 rounded-full mix-blend-multiply filter blur-3xl animate-pulse"
           style={{ animationDelay: "2s" }}
-        ></div>
+        />
 
         {/* Floating geometric elements */}
-        {floatingElementsRef.current.map((element) => (
-          <div
-            key={element.id}
-            className="absolute w-8 h-8 opacity-20"
-            style={{
-              left: element.x,
-              top: element.y,
-              transform: `rotate(${element.rotation}deg) scale(${element.scale})`,
-              transition: "all 0.3s ease-out",
-            }}
-          >
-            <div className="w-full h-full bg-gradient-to-r from-blue-400 to-purple-500 rounded-lg shadow-lg"></div>
-          </div>
-        ))}
+        {floatingElementsRef.current &&
+          floatingElementsRef.current.map((element) => (
+            <div
+              key={element.id}
+              className="absolute w-8 h-8 opacity-20"
+              style={{
+                left: element.x,
+                top: element.y,
+                transform: `rotate(${element.rotation}deg) scale(${element.scale})`,
+                transition: "all 0.3s ease-out",
+              }}
+            >
+              <div className="w-full h-full bg-gradient-to-r from-blue-400 to-purple-500 rounded-lg shadow-lg" />
+            </div>
+          ))}
 
         {/* Animated light rays */}
-        <div className="absolute top-0 left-1/4 w-px h-full bg-gradient-to-b from-transparent via-blue-400/30 to-transparent transform rotate-12 animate-pulse"></div>
+        <div className="absolute top-0 left-1/4 w-px h-full bg-gradient-to-b from-transparent via-blue-400/30 to-transparent transform rotate-12 animate-pulse" />
         <div
           className="absolute top-0 right-1/3 w-px h-full bg-gradient-to-b from-transparent via-purple-400/30 to-transparent transform -rotate-12 animate-pulse"
           style={{ animationDelay: "1s" }}
-        ></div>
+        />
       </div>
 
       {/* Enhanced Navigation */}
@@ -563,12 +553,12 @@ export default function EnhancedKashifPortfolio() {
               <div className="relative">
                 <div className="w-14 h-14 bg-gradient-to-r from-blue-500 via-purple-600 to-indigo-600 rounded-2xl flex items-center justify-center shadow-2xl transform transition-all duration-500 group-hover:scale-110 group-hover:rotate-6 relative overflow-hidden">
                   <span className="text-white font-bold text-xl z-10">K</span>
-                  <div className="absolute inset-0 bg-gradient-to-r from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                  <div className="absolute inset-0 bg-gradient-to-r from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                 </div>
                 <div className="absolute -top-2 -right-2 w-6 h-6 bg-gradient-to-r from-green-400 to-emerald-500 rounded-full border-3 border-white animate-pulse shadow-lg flex items-center justify-center">
-                  <div className="w-2 h-2 bg-white rounded-full animate-ping"></div>
+                  <div className="w-2 h-2 bg-white rounded-full animate-ping" />
                 </div>
-                <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-purple-600 rounded-2xl opacity-0 group-hover:opacity-30 transition-opacity duration-500 blur-xl scale-110"></div>
+                <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-purple-600 rounded-2xl opacity-0 group-hover:opacity-30 transition-opacity duration-500 blur-xl scale-110" />
               </div>
               <div>
                 <h1 className="text-2xl font-bold bg-gradient-to-r from-white via-blue-200 to-purple-200 bg-clip-text text-transparent">
@@ -576,7 +566,7 @@ export default function EnhancedKashifPortfolio() {
                 </h1>
                 <p className="text-sm text-blue-300 font-medium">AI Engineer | HR-AI Specialist</p>
                 <div className="flex items-center space-x-2 mt-1">
-                  <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+                  <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
                   <span className="text-xs text-green-300">Science & Engineering Associate</span>
                 </div>
               </div>
@@ -599,11 +589,11 @@ export default function EnhancedKashifPortfolio() {
                   }}
                 >
                   {item}
-                  <span className="absolute -bottom-3 left-0 w-0 h-1 bg-gradient-to-r from-blue-400 via-purple-400 to-indigo-400 transition-all duration-500 group-hover:w-full rounded-full shadow-lg"></span>
+                  <span className="absolute -bottom-3 left-0 w-0 h-1 bg-gradient-to-r from-blue-400 via-purple-400 to-indigo-400 transition-all duration-500 group-hover:w-full rounded-full shadow-lg" />
                   {activeSection === item.toLowerCase() && (
-                    <span className="absolute -bottom-3 left-0 w-full h-1 bg-gradient-to-r from-blue-400 via-purple-400 to-indigo-400 rounded-full shadow-lg animate-pulse"></span>
+                    <span className="absolute -bottom-3 left-0 w-full h-1 bg-gradient-to-r from-blue-400 via-purple-400 to-indigo-400 rounded-full shadow-lg animate-pulse" />
                   )}
-                  <div className="absolute inset-0 bg-white/5 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 -z-10 scale-110 blur-sm"></div>
+                  <div className="absolute inset-0 bg-white/5 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 -z-10 scale-110 blur-sm" />
                 </a>
               ))}
             </div>
@@ -656,15 +646,15 @@ export default function EnhancedKashifPortfolio() {
             {/* Enhanced Status Badge */}
             <div className="mb-12">
               <div className="inline-flex items-center space-x-4 bg-gradient-to-r from-white/10 via-blue-500/20 to-purple-500/10 backdrop-blur-2xl text-white px-8 py-4 rounded-full text-lg font-medium mb-8 border border-white/30 shadow-2xl group hover:bg-white/20 transition-all duration-500 cursor-pointer relative overflow-hidden">
-                <div className="absolute inset-0 bg-gradient-to-r from-blue-400/20 to-purple-400/20 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                <div className="absolute inset-0 bg-gradient-to-r from-blue-400/20 to-purple-400/20 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
                 <div className="relative flex items-center space-x-2">
-                  <div className="w-4 h-4 bg-gradient-to-r from-green-400 to-emerald-500 rounded-full animate-pulse shadow-lg"></div>
-                  <div className="absolute inset-0 bg-gradient-to-r from-green-400 to-emerald-500 rounded-full animate-ping opacity-75"></div>
+                  <div className="w-4 h-4 bg-gradient-to-r from-green-400 to-emerald-500 rounded-full animate-pulse shadow-lg" />
+                  <div className="absolute inset-0 bg-gradient-to-r from-green-400 to-emerald-500 rounded-full animate-ping opacity-75" />
                 </div>
                 <span className="relative z-10">Driving AI Innovation in HR</span>
                 <div className="relative">
                   <Star className="h-6 w-6 text-yellow-400 animate-pulse" />
-                  <div className="absolute inset-0 bg-yellow-400 rounded-full opacity-20 animate-ping"></div>
+                  <div className="absolute inset-0 bg-yellow-400 rounded-full opacity-20 animate-ping" />
                 </div>
               </div>
             </div>
@@ -673,10 +663,10 @@ export default function EnhancedKashifPortfolio() {
             <div className="relative mb-12">
               <h1 className="text-6xl md:text-8xl font-bold bg-gradient-to-r from-white via-blue-200 via-purple-200 to-indigo-200 bg-clip-text text-transparent mb-6 leading-tight relative">
                 Kashif Mujeeb
-                <div className="absolute -top-8 -right-8 w-12 h-12 bg-gradient-to-r from-blue-400 to-purple-500 rounded-full animate-bounce hidden md:block shadow-2xl opacity-80"></div>
-                <div className="absolute top-1/2 -left-12 w-8 h-8 bg-gradient-to-r from-cyan-400 to-blue-500 rotate-45 animate-pulse hidden md:block shadow-xl opacity-60"></div>
+                <div className="absolute -top-8 -right-8 w-12 h-12 bg-gradient-to-r from-blue-400 to-purple-500 rounded-full animate-bounce hidden md:block shadow-2xl opacity-80" />
+                <div className="absolute top-1/2 -left-12 w-8 h-8 bg-gradient-to-r from-cyan-400 to-blue-500 rotate-45 animate-pulse hidden md:block shadow-xl opacity-60" />
               </h1>
-              <div className="absolute inset-0 bg-gradient-to-r from-blue-500/20 to-purple-500/20 blur-3xl opacity-50 animate-pulse"></div>
+              <div className="absolute inset-0 bg-gradient-to-r from-blue-500/20 to-purple-500/20 blur-3xl opacity-50 animate-pulse" />
             </div>
 
             {/* Enhanced Typing Animation */}
@@ -684,7 +674,7 @@ export default function EnhancedKashifPortfolio() {
               <p className="text-3xl md:text-4xl text-transparent bg-gradient-to-r from-blue-300 via-purple-300 to-indigo-300 bg-clip-text font-medium relative">
                 {typingText}
                 <span className="animate-pulse text-white ml-1 text-4xl">|</span>
-                <div className="absolute inset-0 bg-gradient-to-r from-blue-400/20 to-purple-400/20 blur-xl opacity-50"></div>
+                <div className="absolute inset-0 bg-gradient-to-r from-blue-400/20 to-purple-400/20 blur-xl opacity-50" />
               </p>
             </div>
 
@@ -705,8 +695,8 @@ export default function EnhancedKashifPortfolio() {
                 onMouseLeave={handleMouseLeave}
                 onClick={() => handleButtonClick("https://www.linkedin.com/in/kashif-mujeeb-64789616a/")}
               >
-                <div className="absolute inset-0 bg-gradient-to-r from-white/20 via-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-                <div className="absolute inset-0 bg-gradient-to-r from-blue-400/30 to-purple-400/30 opacity-0 group-hover:opacity-100 transition-opacity duration-500 blur-xl"></div>
+                <div className="absolute inset-0 bg-gradient-to-r from-white/20 via-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                <div className="absolute inset-0 bg-gradient-to-r from-blue-400/30 to-purple-400/30 opacity-0 group-hover:opacity-100 transition-opacity duration-500 blur-xl" />
                 <Linkedin className="mr-4 h-7 w-7 relative z-10" />
                 <span className="relative z-10">Let's Connect & Learn</span>
                 <ArrowRight className="ml-4 h-7 w-7 group-hover:translate-x-2 transition-transform duration-500 relative z-10" />
@@ -719,7 +709,7 @@ export default function EnhancedKashifPortfolio() {
                 onMouseLeave={handleMouseLeave}
                 onClick={() => handleButtonClick("https://github.com/Kashifmujeeb17")}
               >
-                <div className="absolute inset-0 bg-gradient-to-r from-white/10 via-blue-500/10 to-purple-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                <div className="absolute inset-0 bg-gradient-to-r from-white/10 via-blue-500/10 to-purple-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
                 <Github className="mr-4 h-7 w-7 relative z-10" />
                 <span className="relative z-10">View My Projects</span>
               </Button>
@@ -736,7 +726,7 @@ export default function EnhancedKashifPortfolio() {
                   description: "B.E. Computer Systems Engineering",
                 },
                 {
-                  number: "AI Eng",
+                  number: "AI Engineer",
                   label: "Current Role",
                   icon: Brain,
                   gradient: "from-purple-500 to-pink-500",
@@ -764,17 +754,17 @@ export default function EnhancedKashifPortfolio() {
                   onMouseLeave={handleMouseLeave}
                   style={{ animationDelay: `${index * 0.2}s` }}
                 >
-                  <div className="absolute inset-0 bg-gradient-to-r from-white/5 via-blue-500/10 to-purple-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                  <div className="absolute inset-0 bg-gradient-to-r from-white/5 via-blue-500/10 to-purple-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
                   <div
                     className={`w-16 h-16 bg-gradient-to-r ${stat.gradient} rounded-2xl flex items-center justify-center mb-6 mx-auto shadow-2xl group-hover:shadow-3xl transition-all duration-500 group-hover:scale-125 group-hover:rotate-12 relative overflow-hidden`}
                   >
                     <stat.icon className="h-8 w-8 text-white relative z-10" />
-                    <div className="absolute inset-0 bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                    <div className="absolute inset-0 bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                   </div>
-                  <div className="text-3xl font-bold text-white mb-3 relative z-10">{stat.number}</div>
+                  <div className="text-xl font-bold text-white mb-3 relative z-10">{stat.number}</div>
                   <div className="text-white/80 text-sm mb-2 relative z-10">{stat.label}</div>
                   <div className="text-white/60 text-xs relative z-10">{stat.description}</div>
-                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 transform translate-x-full group-hover:translate-x-0"></div>
+                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 transform translate-x-full group-hover:translate-x-0" />
                 </div>
               ))}
             </div>
@@ -790,8 +780,8 @@ export default function EnhancedKashifPortfolio() {
         >
           <div className="flex flex-col items-center space-y-4 animate-bounce">
             <div className="w-8 h-12 border-2 border-white/60 rounded-full flex justify-center group-hover:border-white transition-colors duration-500 relative overflow-hidden">
-              <div className="w-2 h-4 bg-gradient-to-b from-blue-400 via-purple-400 to-indigo-400 rounded-full mt-2 animate-pulse shadow-lg"></div>
-              <div className="absolute inset-0 bg-gradient-to-b from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+              <div className="w-2 h-4 bg-gradient-to-b from-blue-400 via-purple-400 to-indigo-400 rounded-full mt-2 animate-pulse shadow-lg" />
+              <div className="absolute inset-0 bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
             </div>
             <ChevronDown className="h-6 w-6 text-white/80 group-hover:text-white transition-colors duration-500 animate-pulse" />
             <div className="text-white/60 text-sm group-hover:text-white/80 transition-colors duration-300">
@@ -816,9 +806,9 @@ export default function EnhancedKashifPortfolio() {
           <div className="max-w-7xl mx-auto">
             <div className="text-center mb-24">
               <div className="inline-flex items-center space-x-4 bg-gradient-to-r from-white/10 via-blue-500/20 to-purple-500/10 backdrop-blur-2xl text-white px-8 py-4 rounded-full text-lg font-medium mb-12 border border-white/30 shadow-2xl">
-                <BookOpen className="h-6 w-6 text-blue-400 animate-pulse" />
+                <Book className="h-6 w-6 text-blue-400 animate-pulse" />
                 <span>About Me</span>
-                <div className="w-2 h-2 bg-blue-400 rounded-full animate-ping"></div>
+                <div className="w-2 h-2 bg-blue-400 rounded-full animate-ping" />
               </div>
               <h2 className="text-5xl md:text-6xl font-bold bg-gradient-to-r from-white via-blue-200 via-purple-200 to-indigo-200 bg-clip-text text-transparent mb-12 leading-tight">
                 AI Engineer | HR-AI Innovator
@@ -855,14 +845,14 @@ export default function EnhancedKashifPortfolio() {
                     onMouseEnter={() => handleMouseEnter("card")}
                     onMouseLeave={handleMouseLeave}
                   >
-                    <div className="absolute inset-0 bg-gradient-to-r from-white/5 via-blue-500/10 to-purple-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                    <div className="absolute inset-0 bg-gradient-to-r from-white/5 via-blue-500/10 to-purple-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
                     <CardContent className="p-10">
                       <div className="flex items-start space-x-6">
                         <div
                           className={`w-20 h-20 bg-gradient-to-r ${item.gradient} rounded-3xl flex items-center justify-center flex-shrink-0 shadow-2xl group-hover:shadow-3xl transition-all duration-500 group-hover:scale-110 group-hover:rotate-6 relative overflow-hidden`}
                         >
                           <item.icon className="h-10 w-10 text-white relative z-10" />
-                          <div className="absolute inset-0 bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                          <div className="absolute inset-0 bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                         </div>
                         <div className="flex-1">
                           <h3 className="text-2xl font-bold text-white mb-4 relative z-10">{item.title}</h3>
@@ -909,8 +899,8 @@ export default function EnhancedKashifPortfolio() {
                             className={`h-full bg-gradient-to-r ${item.color} rounded-full transition-all duration-2000 ease-out shadow-lg relative overflow-hidden`}
                             style={{ width: `${item.level}%` }}
                           >
-                            <div className="absolute inset-0 bg-white/30 animate-pulse"></div>
-                            <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-r from-transparent via-white/40 to-transparent transform -skew-x-12 animate-shimmer"></div>
+                            <div className="absolute inset-0 bg-white/30 animate-pulse" />
+                            <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-r from-transparent via-white/40 to-transparent transform -skew-x-12 animate-shimmer" />
                           </div>
                         </div>
                       </div>
@@ -951,12 +941,12 @@ export default function EnhancedKashifPortfolio() {
                       onMouseEnter={() => handleMouseEnter("card")}
                       onMouseLeave={handleMouseLeave}
                     >
-                      <div className="absolute inset-0 bg-gradient-to-r from-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                      <div className="absolute inset-0 bg-gradient-to-r from-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                       <div
                         className={`w-16 h-16 bg-gradient-to-r ${item.gradient} rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-2xl group-hover:shadow-3xl transition-all duration-500 group-hover:scale-125 group-hover:rotate-12 relative overflow-hidden`}
                       >
                         <item.icon className="h-8 w-8 text-white relative z-10" />
-                        <div className="absolute inset-0 bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                        <div className="absolute inset-0 bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                       </div>
                       <div className="text-lg font-bold text-white mb-2 relative z-10">{item.title}</div>
                       <div className="text-white/70 text-sm relative z-10">{item.subtitle}</div>
@@ -981,7 +971,7 @@ export default function EnhancedKashifPortfolio() {
               <div className="inline-flex items-center space-x-4 bg-gradient-to-r from-white/10 via-blue-500/20 to-purple-500/10 backdrop-blur-2xl text-white px-8 py-4 rounded-full text-lg font-medium mb-12 border border-white/30 shadow-2xl">
                 <Brain className="h-6 w-6 text-purple-400 animate-pulse" />
                 <span>My Skills</span>
-                <div className="w-2 h-2 bg-purple-400 rounded-full animate-ping"></div>
+                <div className="w-2 h-2 bg-purple-400 rounded-full animate-ping" />
               </div>
               <h2 className="text-5xl md:text-6xl font-bold bg-gradient-to-r from-white via-blue-200 via-purple-200 to-indigo-200 bg-clip-text text-transparent mb-12 leading-tight">
                 Technical Expertise & HR Domain
@@ -1015,8 +1005,8 @@ export default function EnhancedKashifPortfolio() {
                           className={`h-full bg-gradient-to-r ${item.color} rounded-full transition-all duration-2000 ease-out shadow-lg relative overflow-hidden`}
                           style={{ width: `${item.level}%` }}
                         >
-                          <div className="absolute inset-0 bg-white/30 animate-pulse"></div>
-                          <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-r from-transparent via-white/40 to-transparent transform -skew-x-12 animate-shimmer"></div>
+                          <div className="absolute inset-0 bg-white/30 animate-pulse" />
+                          <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-r from-transparent via-white/40 to-transparent transform -skew-x-12 animate-shimmer" />
                         </div>
                       </div>
                     </div>
@@ -1057,12 +1047,12 @@ export default function EnhancedKashifPortfolio() {
                     onMouseEnter={() => handleMouseEnter("card")}
                     onMouseLeave={handleMouseLeave}
                   >
-                    <div className="absolute inset-0 bg-gradient-to-r from-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                    <div className="absolute inset-0 bg-gradient-to-r from-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                     <div
                       className={`w-16 h-16 bg-gradient-to-r ${item.gradient} rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-2xl group-hover:shadow-3xl transition-all duration-500 group-hover:scale-125 group-hover:rotate-12 relative overflow-hidden`}
                     >
                       <item.icon className="h-8 w-8 text-white relative z-10" />
-                      <div className="absolute inset-0 bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                      <div className="absolute inset-0 bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                     </div>
                     <div className="text-lg font-bold text-white mb-2 relative z-10">{item.title}</div>
                     <div className="text-white/70 text-sm relative z-10">{item.subtitle}</div>
@@ -1086,7 +1076,7 @@ export default function EnhancedKashifPortfolio() {
               <div className="inline-flex items-center space-x-4 bg-gradient-to-r from-white/10 via-blue-500/20 to-purple-500/10 backdrop-blur-2xl text-white px-8 py-4 rounded-full text-lg font-medium mb-12 border border-white/30 shadow-2xl">
                 <Rocket className="h-6 w-6 text-orange-400 animate-pulse" />
                 <span>My Experience & Achievements</span>
-                <div className="w-2 h-2 bg-orange-400 rounded-full animate-ping"></div>
+                <div className="w-2 h-2 bg-orange-400 rounded-full animate-ping" />
               </div>
               <h2 className="text-5xl md:text-6xl font-bold bg-gradient-to-r from-white via-blue-200 via-purple-200 to-indigo-200 bg-clip-text text-transparent mb-12 leading-tight">
                 Professional Journey & Milestones
@@ -1106,13 +1096,13 @@ export default function EnhancedKashifPortfolio() {
                   onMouseEnter={() => handleMouseEnter("card")}
                   onMouseLeave={handleMouseLeave}
                 >
-                  <div className="absolute inset-0 bg-gradient-to-r from-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                  <div className="absolute inset-0 bg-gradient-to-r from-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
                   <CardContent className="p-8 text-center">
                     <div
                       className={`w-18 h-18 bg-gradient-to-r ${achievement.color} rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-2xl group-hover:shadow-3xl transition-all duration-500 group-hover:scale-125 group-hover:rotate-12 relative overflow-hidden`}
                     >
                       <achievement.icon className="h-9 w-9 text-white relative z-10" />
-                      <div className="absolute inset-0 bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                      <div className="absolute inset-0 bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                     </div>
                     <h4 className="font-bold text-white mb-3 text-lg relative z-10">{achievement.title}</h4>
                     <p className="text-white/70 mb-3 text-sm relative z-10">{achievement.organization}</p>
@@ -1138,7 +1128,7 @@ export default function EnhancedKashifPortfolio() {
               <div className="inline-flex items-center space-x-4 bg-gradient-to-r from-white/10 via-blue-500/20 to-purple-500/10 backdrop-blur-2xl text-white px-8 py-4 rounded-full text-lg font-medium mb-12 border border-white/30 shadow-2xl">
                 <Code className="h-6 w-6 text-green-400 animate-pulse" />
                 <span>My HR-AI Projects</span>
-                <div className="w-2 h-2 bg-green-400 rounded-full animate-ping"></div>
+                <div className="w-2 h-2 bg-green-400 rounded-full animate-ping" />
               </div>
               <h2 className="text-5xl md:text-6xl font-bold bg-gradient-to-r from-white via-blue-200 via-purple-200 to-indigo-200 bg-clip-text text-transparent mb-12 leading-tight">
                 Driving Innovation in Human Resources
@@ -1156,13 +1146,13 @@ export default function EnhancedKashifPortfolio() {
                   onMouseEnter={() => handleMouseEnter("card")}
                   onMouseLeave={handleMouseLeave}
                 >
-                  <div className="absolute inset-0 bg-gradient-to-r from-white/5 via-blue-500/10 to-purple-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                  <div className="absolute inset-0 bg-gradient-to-r from-white/5 via-blue-500/10 to-purple-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
                   <CardContent className="p-8">
                     <div
                       className={`w-16 h-16 bg-gradient-to-r ${project.gradient} rounded-2xl flex items-center justify-center mb-6 shadow-2xl group-hover:shadow-3xl transition-all duration-500 group-hover:scale-110 group-hover:rotate-6 relative overflow-hidden`}
                     >
                       <project.icon className="h-8 w-8 text-white relative z-10" />
-                      <div className="absolute inset-0 bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                      <div className="absolute inset-0 bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                     </div>
                     <h3 className="text-2xl font-bold text-white mb-4 relative z-10">{project.title}</h3>
                     <p className="text-white/80 leading-relaxed mb-6 text-sm relative z-10">{project.description}</p>
@@ -1201,7 +1191,7 @@ export default function EnhancedKashifPortfolio() {
             <div className="inline-flex items-center space-x-4 bg-gradient-to-r from-white/10 via-blue-500/20 to-purple-500/10 backdrop-blur-2xl text-white px-8 py-4 rounded-full text-lg font-medium mb-12 border border-white/30 shadow-2xl">
               <Mail className="h-6 w-6 text-cyan-400 animate-pulse" />
               <span>Get in Touch</span>
-              <div className="w-2 h-2 bg-cyan-400 rounded-full animate-ping"></div>
+              <div className="w-2 h-2 bg-cyan-400 rounded-full animate-ping" />
             </div>
             <h2 className="text-5xl md:text-6xl font-bold bg-gradient-to-r from-white via-blue-200 via-purple-200 to-indigo-200 bg-clip-text text-transparent mb-12 leading-tight">
               Let's Connect & Collaborate
@@ -1218,8 +1208,8 @@ export default function EnhancedKashifPortfolio() {
                 onMouseLeave={handleMouseLeave}
                 onClick={() => handleButtonClick("mailto:your.email@example.com")}
               >
-                <div className="absolute inset-0 bg-gradient-to-r from-white/20 via-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-                <div className="absolute inset-0 bg-gradient-to-r from-blue-400/30 to-purple-400/30 opacity-0 group-hover:opacity-100 transition-opacity duration-500 blur-xl"></div>
+                <div className="absolute inset-0 bg-gradient-to-r from-white/20 via-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                <div className="absolute inset-0 bg-gradient-to-r from-blue-400/30 to-purple-400/30 opacity-0 group-hover:opacity-100 transition-opacity duration-500 blur-xl" />
                 <Mail className="mr-4 h-7 w-7 relative z-10" />
                 <span className="relative z-10">Send Me an Email</span>
                 <ArrowRight className="ml-4 h-7 w-7 group-hover:translate-x-2 transition-transform duration-500 relative z-10" />
@@ -1236,7 +1226,7 @@ export default function EnhancedKashifPortfolio() {
             <div className="flex items-center justify-center space-x-6 mb-12">
               <div className="w-20 h-20 bg-gradient-to-r from-blue-600 via-purple-700 to-indigo-800 rounded-3xl flex items-center justify-center shadow-2xl relative overflow-hidden">
                 <span className="text-white font-bold text-2xl z-10">K</span>
-                <div className="absolute inset-0 bg-gradient-to-r from-white/20 to-transparent opacity-50"></div>
+                <div className="absolute inset-0 bg-gradient-to-r from-white/20 to-transparent opacity-50" />
               </div>
               <div className="text-left">
                 <h3 className="text-3xl font-bold bg-gradient-to-r from-white to-blue-200 bg-clip-text text-transparent">
@@ -1244,7 +1234,7 @@ export default function EnhancedKashifPortfolio() {
                 </h3>
                 <p className="text-blue-300 text-lg">AI Engineer | HR-AI Specialist</p>
                 <div className="flex items-center space-x-2 mt-2">
-                  <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+                  <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
                   <span className="text-green-300 text-sm">Science & Engineering Associate</span>
                 </div>
               </div>
@@ -1273,7 +1263,7 @@ export default function EnhancedKashifPortfolio() {
                   onClick={() => handleButtonClick(social.link)}
                 >
                   <social.icon className="h-8 w-8 relative z-10" />
-                  <div className="absolute inset-0 bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                  <div className="absolute inset-0 bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                 </Button>
               ))}
             </div>

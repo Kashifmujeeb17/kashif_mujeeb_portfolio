@@ -176,7 +176,7 @@ export default function EnhancedKashifPortfolio() {
         if (currentLength < currentText.length) {
           setTypingText(currentText.substring(0, currentLength + 1))
           charIndexRef.current = currentLength + 1
-          animationTimerRef.current = setTimeout(type, 300) // Even slower typing speed
+          animationTimerRef.current = setTimeout(type, 3000) // Even slower typing speed
         } else {
           // Done typing, wait before deleting
           isDeletingRef.current = true
@@ -187,13 +187,13 @@ export default function EnhancedKashifPortfolio() {
         if (currentLength > 0) {
           setTypingText(currentText.substring(0, currentLength - 1))
           charIndexRef.current = currentLength - 1
-          animationTimerRef.current = setTimeout(type, 120) // Even slower deleting speed
+          animationTimerRef.current = setTimeout(type, 1200) // Even slower deleting speed
         } else {
           // Done deleting, switch to next text
           isDeletingRef.current = false
           currentTextIndexRef.current = (currentTextIndexRef.current + 1) % typingTexts.length
           charIndexRef.current = 0
-          animationTimerRef.current = setTimeout(type, 1500) // Even longer delay before starting next text
+          animationTimerRef.current = setTimeout(type, 5000) // Even longer delay before starting next text
         }
       }
     }

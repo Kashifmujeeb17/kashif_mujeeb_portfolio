@@ -176,7 +176,7 @@ useEffect(() => {
       if (currentLength < currentText.length) {
         setTypingText(currentText.substring(0, currentLength + 1))
         charIndexRef.current = currentLength + 1
-        animationTimerRef.current = setTimeout(type, 150)
+        animationTimerRef.current = setTimeout(type, 1000)
       } else {
         // Done typing, wait before deleting
         isDeletingRef.current = true
@@ -187,13 +187,13 @@ useEffect(() => {
       if (currentLength > 0) {
         setTypingText(currentText.substring(0, currentLength - 1))
         charIndexRef.current = currentLength - 1
-        animationTimerRef.current = setTimeout(type, 50)
+        animationTimerRef.current = setTimeout(type, 1500)
       } else {
         // Done deleting, switch to next text
         isDeletingRef.current = false
         currentTextIndexRef.current = (currentTextIndexRef.current + 1) % typingTexts.length
         charIndexRef.current = 0
-        animationTimerRef.current = setTimeout(type, 500) // Small delay before starting next text
+        animationTimerRef.current = setTimeout(type, 1500) // Small delay before starting next text
       }
     }
   }

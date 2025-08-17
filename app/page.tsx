@@ -771,7 +771,7 @@ export default function EnhancedKashifPortfolio() {
                     <stat.icon className="h-8 w-8 text-white relative z-10" />
                     <div className="absolute inset-0 bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                   </div>
-                  <div className="text-3xl font-bold text-white mb-3 relative z-10">{stat.number}</div>
+                  <div className="font-bold text-white mb-3 relative z-10 text-xl">{stat.number}</div>
                   <div className="text-white/80 text-sm mb-2 relative z-10">{stat.label}</div>
                   <div className="text-white/60 text-xs relative z-10">{stat.description}</div>
                   <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 transform translate-x-full group-hover:translate-x-0"></div>

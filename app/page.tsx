@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import {
+  Mail,
   Github,
   Linkedin,
   Brain,
@@ -26,7 +27,6 @@ import {
   Zap,
   BookOpen,
   Star,
-  Mail,
 } from "lucide-react"
 import { useInView } from "@/hooks/useInView" // Import the new hook
 
@@ -39,27 +39,24 @@ export default function EnhancedKashifPortfolio() {
   const [isHovering, setIsHovering] = useState(false)
   const [scrollY, setScrollY] = useState(0)
   const [typingText, setTypingText] = useState("")
+  const [currentTextIndex, setCurrentTextIndex] = useState(0)
+  const [charIndex, setCharIndex] = useState(0) // New state for current character index
+  const [isDeleting, setIsDeleting] = useState(false) // New state for typing/deleting mode
   const [glowIntensity, setGlowIntensity] = useState(0.5)
   const [currentTime, setCurrentTime] = useState(new Date())
 
-  // Refs for internal animation state
-  const currentTextIndexRef = useRef(0)
-  const charIndexRef = useRef(0)
-  const isDeletingRef = useRef(false)
-  const animationTimerRef = useRef<NodeJS.Timeout | null>(null) // Ref for the animation timer
-
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const heroRef = useRef<HTMLDivElement>(null)
-  const particlesAnimationRef = useRef<number>()
+  const animationFrameRef = useRef<number>()
   const particlesRef = useRef<
     Array<{ id: number; x: number; y: number; size: number; opacity: number; vx: number; vy: number }>
   >([])
-  const floatingElementsRef = useRef<Array<{ id: number; x: number; y: number; rotation: number; scale: number }>>()
+  const floatingElementsRef = useRef<Array<{ id: number; x: number; y: number; rotation: number; scale: number }>>([])
 
   // Refs for scroll animations
   const [aboutRef, aboutInView] = useInView({ threshold: 0.2 })
   const [skillsRef, skillsInView] = useInView({ threshold: 0.2 })
-  const [experienceRef, experienceInView] = useInView({ threshold: 0.2 })
+  const [experienceRef, experienceInView] = useInView({ threshold: 0.2 }) // New ref for experience
   const [projectsRef, projectsInView] = useInView({ threshold: 0.2 })
   const [contactRef, contactInView] = useInView({ threshold: 0.2 })
 
@@ -90,8 +87,7 @@ export default function EnhancedKashifPortfolio() {
   const initializeFloatingElements = useCallback(() => {
     if (typeof window === "undefined") return
 
-    const elements = Array.from({ length: 20 }, (_, i) => ({
-      // Increased from 12 to 20
+    const elements = Array.from({ length: 12 }, (_, i) => ({
       id: i,
       x: Math.random() * window.innerWidth,
       y: Math.random() * window.innerHeight,
@@ -158,7 +154,7 @@ export default function EnhancedKashifPortfolio() {
         ctx.fill()
       })
 
-      particlesAnimationRef.current = requestAnimationFrame(animate)
+      animationFrameRef.current = requestAnimationFrame(animate)
     }
 
     animate()
@@ -172,8 +168,8 @@ export default function EnhancedKashifPortfolio() {
     animateCanvas()
 
     return () => {
-      if (particlesAnimationRef.current) {
-        cancelAnimationFrame(particlesAnimationRef.current)
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current)
       }
     }
   }, [initializeParticles, initializeFloatingElements, animateCanvas])
@@ -191,46 +187,44 @@ export default function EnhancedKashifPortfolio() {
 
   // Typing animation logic
   useEffect(() => {
-    const type = () => {
-      const currentText = typingTexts[currentTextIndexRef.current]
-      const currentLength = charIndexRef.current
+    const currentText = typingTexts[currentTextIndex]
+    let timer: NodeJS.Timeout
 
-      if (!isDeletingRef.current) {
+    const handleTyping = () => {
+      if (!isDeleting) {
         // Typing
-        if (currentLength < currentText.length) {
-          setTypingText(currentText.substring(0, currentLength + 1))
-          charIndexRef.current = currentLength + 1
-          animationTimerRef.current = setTimeout(type, 80)
+        if (charIndex < currentText.length) {
+          setTypingText(currentText.substring(0, charIndex + 1))
+          setCharIndex((prev) => prev + 1)
+          timer = setTimeout(handleTyping, 80) // Typing speed
         } else {
           // Done typing, wait before deleting
-          isDeletingRef.current = true
-          animationTimerRef.current = setTimeout(type, 3000)
+          timer = setTimeout(() => setIsDeleting(true), 3000) // Pause before deleting
         }
       } else {
         // Deleting
-        if (currentLength > 0) {
-          setTypingText(currentText.substring(0, currentLength - 1))
-          charIndexRef.current = currentLength - 1
-          animationTimerRef.current = setTimeout(type, 30)
+        if (charIndex > 0) {
+          setTypingText(currentText.substring(0, charIndex - 1))
+          setCharIndex((prev) => prev - 1)
+          timer = setTimeout(handleTyping, 30) // Deleting speed
         } else {
           // Done deleting, switch to next text
-          isDeletingRef.current = false
-          currentTextIndexRef.current = (currentTextIndexRef.current + 1) % typingTexts.length
-          charIndexRef.current = 0
-          animationTimerRef.current = setTimeout(type, 500) // Small delay before starting next text
+          setIsDeleting(false)
+          setCurrentTextIndex((prev) => (prev + 1) % typingTexts.length)
+          // Reset charIndex for the new text (will be handled by next useEffect run)
+          setCharIndex(0)
         }
       }
     }
 
-    type() // Start the animation
+    // Start the animation cycle
+    handleTyping()
 
     // Cleanup function
     return () => {
-      if (animationTimerRef.current) {
-        clearTimeout(animationTimerRef.current)
-      }
+      clearTimeout(timer)
     }
-  }, [typingTexts]) // Only re-run if typingTexts array changes
+  }, [charIndex, currentTextIndex, isDeleting, typingTexts]) // Dependencies for useEffect
 
   // Scroll and mouse handlers
   useEffect(() => {
@@ -274,14 +268,12 @@ export default function EnhancedKashifPortfolio() {
       })
 
       // Update floating elements
-      if (floatingElementsRef.current) {
-        floatingElementsRef.current = floatingElementsRef.current.map((element) => ({
-          ...element,
-          rotation: element.rotation + 0.5,
-          x: element.x + Math.sin(Date.now() * 0.001 + element.id) * 0.1,
-          y: element.y + Math.cos(Date.now() * 0.001 + element.id) * 0.1,
-        }))
-      }
+      floatingElementsRef.current = floatingElementsRef.current.map((element) => ({
+        ...element,
+        rotation: element.rotation + 0.5,
+        x: element.x + Math.sin(Date.now() * 0.001 + element.id) * 0.1,
+        y: element.y + Math.cos(Date.now() * 0.001 + element.id) * 0.1,
+      }))
     }
 
     window.addEventListener("scroll", handleScroll)
@@ -391,7 +383,7 @@ export default function EnhancedKashifPortfolio() {
     {
       title: "Science & Engineering Associate",
       organization: "Current Role - HR AI Engineer",
-      year: "2025",
+      year: "2024",
       icon: Rocket,
       color: "from-green-500 to-emerald-600",
       description: "AI Engineer in HR Department",
@@ -529,32 +521,26 @@ export default function EnhancedKashifPortfolio() {
           className="absolute -bottom-1/2 -left-1/2 w-full h-full bg-gradient-to-tr from-cyan-500/20 via-blue-500/15 to-purple-500/20 rounded-full mix-blend-multiply filter blur-3xl animate-pulse transform -rotate-12"
           style={{ animationDelay: "1s" }}
         ></div>
-        {/* New gradient mesh */}
-        <div
-          className="absolute top-1/3 left-1/3 w-80 h-80 bg-gradient-to-tl from-pink-500/15 via-red-500/10 to-orange-500/15 rounded-full mix-blend-multiply filter blur-3xl animate-pulse transform rotate-45"
-          style={{ animationDelay: "2.5s" }}
-        ></div>
         <div
           className="absolute top-1/4 left-1/4 w-96 h-96 bg-gradient-to-r from-purple-500/10 via-pink-500/10 to-indigo-500/10 rounded-full mix-blend-multiply filter blur-3xl animate-pulse"
           style={{ animationDelay: "2s" }}
         ></div>
 
         {/* Floating geometric elements */}
-        {floatingElementsRef.current &&
-          floatingElementsRef.current.map((element) => (
-            <div
-              key={element.id}
-              className="absolute w-8 h-8 opacity-20"
-              style={{
-                left: element.x,
-                top: element.y,
-                transform: `rotate(${element.rotation}deg) scale(${element.scale})`,
-                transition: "all 0.3s ease-out",
-              }}
-            >
-              <div className="w-full h-full bg-gradient-to-r from-blue-400 to-purple-500 rounded-lg shadow-lg"></div>
-            </div>
-          ))}
+        {floatingElementsRef.current.map((element) => (
+          <div
+            key={element.id}
+            className="absolute w-8 h-8 opacity-20"
+            style={{
+              left: element.x,
+              top: element.y,
+              transform: `rotate(${element.rotation}deg) scale(${element.scale})`,
+              transition: "all 0.3s ease-out",
+            }}
+          >
+            <div className="w-full h-full bg-gradient-to-r from-blue-400 to-purple-500 rounded-lg shadow-lg"></div>
+          </div>
+        ))}
 
         {/* Animated light rays */}
         <div className="absolute top-0 left-1/4 w-px h-full bg-gradient-to-b from-transparent via-blue-400/30 to-transparent transform rotate-12 animate-pulse"></div>
@@ -785,7 +771,7 @@ export default function EnhancedKashifPortfolio() {
                     <stat.icon className="h-8 w-8 text-white relative z-10" />
                     <div className="absolute inset-0 bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                   </div>
-                  <div className="text-xl font-bold text-white mb-3 relative z-10">{stat.number}</div>
+                  <div className="text-3xl font-bold text-white mb-3 relative z-10">{stat.number}</div>
                   <div className="text-white/80 text-sm mb-2 relative z-10">{stat.label}</div>
                   <div className="text-white/60 text-xs relative z-10">{stat.description}</div>
                   <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 transform translate-x-full group-hover:translate-x-0"></div>

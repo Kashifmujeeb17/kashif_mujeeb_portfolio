@@ -733,7 +733,7 @@ export default function EnhancedKashifPortfolio() {
                 onClick={() => handleButtonClick("https://github.com/Kashifmujeeb17")}
               >
                 <div className="absolute inset-0 bg-gradient-to-r from-white/10 via-blue-500/10 to-purple-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                <Github className="mr-4 h-7 w-7 relative z-10" />
+                <Code className="mr-4 h-7 w-7 relative z-10" />
                 <span className="relative z-10">View My Projects</span>
               </Button>
             </div>

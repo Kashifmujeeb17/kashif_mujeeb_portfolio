@@ -4,7 +4,30 @@ import { useState, useEffect, useRef, useCallback } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Github, Linkedin, Brain, Code, TrendingUp, ChevronDown, Menu, X, ArrowRight, Target, GraduationCap, BarChart3, Network, FileText, Users, UserCheck, Rocket, Cpu, Zap, BookOpen, Star, Mail, Book } from 'lucide-react'
+import {
+  Github,
+  Linkedin,
+  Brain,
+  Code,
+  TrendingUp,
+  ChevronDown,
+  Menu,
+  X,
+  ArrowRight,
+  Target,
+  GraduationCap,
+  BarChart3,
+  Network,
+  FileText,
+  Users,
+  UserCheck,
+  Rocket,
+  Cpu,
+  Zap,
+  Star,
+  Mail,
+  Book,
+} from "lucide-react"
 import { useInView } from "@/hooks/useInView"
 
 export default function EnhancedKashifPortfolio() {
@@ -176,24 +199,24 @@ export default function EnhancedKashifPortfolio() {
         if (currentLength < currentText.length) {
           setTypingText(currentText.substring(0, currentLength + 1))
           charIndexRef.current = currentLength + 1
-          animationTimerRef.current = setTimeout(type, 3000) // Even slower typing speed
+          animationTimerRef.current = setTimeout(type, 500) // Much slower typing: 500ms per character
         } else {
           // Done typing, wait before deleting
           isDeletingRef.current = true
-          animationTimerRef.current = setTimeout(type, 4000) // Even longer pause after typing
+          animationTimerRef.current = setTimeout(type, 6000) // Much longer pause: 6 seconds
         }
       } else {
         // Deleting
         if (currentLength > 0) {
           setTypingText(currentText.substring(0, currentLength - 1))
           charIndexRef.current = currentLength - 1
-          animationTimerRef.current = setTimeout(type, 1200) // Even slower deleting speed
+          animationTimerRef.current = setTimeout(type, 200) // Slower deleting: 200ms per character
         } else {
           // Done deleting, switch to next text
           isDeletingRef.current = false
           currentTextIndexRef.current = (currentTextIndexRef.current + 1) % typingTexts.length
           charIndexRef.current = 0
-          animationTimerRef.current = setTimeout(type, 5000) // Even longer delay before starting next text
+          animationTimerRef.current = setTimeout(type, 2000) // Longer delay before next text: 2 seconds
         }
       }
     }

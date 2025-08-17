@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, useCallback } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { ChevronDown, Menu, X, ArrowRight } from "lucide-react"
+import { Github, Linkedin, Brain, Code, TrendingUp, ChevronDown, Menu, X, ArrowRight, Target, GraduationCap, BarChart3, Network, FileText, Users, UserCheck, Rocket, Cpu, Zap, BookOpen, Star, Mail, Book } from 'lucide-react'
 import { useInView } from "@/hooks/useInView"
 
 export default function EnhancedKashifPortfolio() {
@@ -15,17 +15,23 @@ export default function EnhancedKashifPortfolio() {
   const [cursorVariant, setCursorVariant] = useState("default")
   const [isHovering, setIsHovering] = useState(false)
   const [scrollY, setScrollY] = useState(0)
+  const [typingText, setTypingText] = useState("")
   const [glowIntensity, setGlowIntensity] = useState(0.5)
   const [currentTime, setCurrentTime] = useState(new Date())
 
   // Refs for internal animation state
+  const currentTextIndexRef = useRef(0)
+  const charIndexRef = useRef(0)
+  const isDeletingRef = useRef(false)
+  const animationTimerRef = useRef<NodeJS.Timeout | null>(null)
+
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const heroRef = useRef<HTMLDivElement>(null)
   const particlesAnimationRef = useRef<number>()
   const particlesRef = useRef<
     Array<{ id: number; x: number; y: number; size: number; opacity: number; vx: number; vy: number }>
   >([])
-  const floatingElementsRef = useRef<Array<{ id: number; x: number; y: number; rotation: number; scale: number }>>([])
+  const floatingElementsRef = useRef<Array<{ id: number; x: number; y: number; rotation: number; scale: number }>>()
 
   // Refs for scroll animations
   const [aboutRef, aboutInView] = useInView({ threshold: 0.2 })
@@ -33,6 +39,13 @@ export default function EnhancedKashifPortfolio() {
   const [experienceRef, experienceInView] = useInView({ threshold: 0.2 })
   const [projectsRef, projectsInView] = useInView({ threshold: 0.2 })
   const [contactRef, contactInView] = useInView({ threshold: 0.2 })
+
+  const typingTexts = [
+    "Science & Engineering Associate - AI Engineer",
+    "HR-AI Solutions Developer",
+    "Machine Learning Engineer in HR",
+    "AI Innovation Specialist",
+  ]
 
   // Initialize particles once
   const initializeParticles = useCallback(() => {
@@ -139,9 +152,9 @@ export default function EnhancedKashifPortfolio() {
         cancelAnimationFrame(particlesAnimationRef.current)
       }
     }
-  }, []) // Remove dependencies to prevent infinite loop
+  }, [initializeParticles, initializeFloatingElements, animateCanvas])
 
-  // Handle window resize - separate effect
+  // Handle window resize
   useEffect(() => {
     const handleResize = () => {
       initializeParticles()
@@ -152,7 +165,50 @@ export default function EnhancedKashifPortfolio() {
     return () => window.removeEventListener("resize", handleResize)
   }, [initializeParticles, initializeFloatingElements])
 
-  // Scroll and mouse handlers - separate effect
+  // Typing animation logic
+  useEffect(() => {
+    const type = () => {
+      const currentText = typingTexts[currentTextIndexRef.current]
+      const currentLength = charIndexRef.current
+
+      if (!isDeletingRef.current) {
+        // Typing
+        if (currentLength < currentText.length) {
+          setTypingText(currentText.substring(0, currentLength + 1))
+          charIndexRef.current = currentLength + 1
+          animationTimerRef.current = setTimeout(type, 80)
+        } else {
+          // Done typing, wait before deleting
+          isDeletingRef.current = true
+          animationTimerRef.current = setTimeout(type, 3000)
+        }
+      } else {
+        // Deleting
+        if (currentLength > 0) {
+          setTypingText(currentText.substring(0, currentLength - 1))
+          charIndexRef.current = currentLength - 1
+          animationTimerRef.current = setTimeout(type, 30)
+        } else {
+          // Done deleting, switch to next text
+          isDeletingRef.current = false
+          currentTextIndexRef.current = (currentTextIndexRef.current + 1) % typingTexts.length
+          charIndexRef.current = 0
+          animationTimerRef.current = setTimeout(type, 500) // Small delay before starting next text
+        }
+      }
+    }
+
+    type() // Start the animation
+
+    // Cleanup function
+    return () => {
+      if (animationTimerRef.current) {
+        clearTimeout(animationTimerRef.current)
+      }
+    }
+  }, [typingTexts]) // Only re-run if typingTexts array changes
+
+  // Scroll and mouse handlers
   useEffect(() => {
     const handleScroll = () => {
       const scrollPosition = window.scrollY
@@ -208,12 +264,12 @@ export default function EnhancedKashifPortfolio() {
     window.addEventListener("mousemove", handleMouseMove)
 
     return () => {
-      window.removeEventListener("scroll", handleScroll)
+      window.removeEventListener("scroll", handleMouseMove)
       window.removeEventListener("mousemove", handleMouseMove)
     }
   }, [])
 
-  // Update time - separate effect
+  // Update time
   useEffect(() => {
     const timeInterval = setInterval(() => {
       setCurrentTime(new Date())
@@ -223,32 +279,36 @@ export default function EnhancedKashifPortfolio() {
   }, [])
 
   const skills = [
-    { name: "Machine Learning", level: 85, category: "AI/ML", color: "from-purple-500 to-pink-500" },
-    { name: "Python", level: 90, category: "Programming", color: "from-green-500 to-emerald-500" },
-    { name: "HR Analytics", level: 80, category: "HR Tech", color: "from-blue-500 to-cyan-500" },
+    { name: "Machine Learning", level: 85, category: "AI/ML", icon: Brain, color: "from-purple-500 to-pink-500" },
+    { name: "Python", level: 90, category: "Programming", icon: Code, color: "from-green-500 to-emerald-500" },
+    { name: "HR Analytics", level: 80, category: "HR Tech", icon: BarChart3, color: "from-blue-500 to-cyan-500" },
     {
       name: "Data Science",
       level: 82,
       category: "Analytics",
+      icon: BarChart3,
       color: "from-teal-500 to-cyan-500",
     },
     {
       name: "Natural Language Processing",
       level: 78,
       category: "AI/ML",
+      icon: FileText,
       color: "from-orange-500 to-red-500",
     },
-    { name: "TensorFlow/PyTorch", level: 75, category: "AI/ML", color: "from-indigo-500 to-purple-500" },
+    { name: "TensorFlow/PyTorch", level: 75, category: "AI/ML", icon: Cpu, color: "from-indigo-500 to-purple-500" },
     {
       name: "SQL & Databases",
       level: 85,
       category: "Data",
+      icon: Network,
       color: "from-rose-500 to-pink-500",
     },
     {
       name: "Computer Vision",
       level: 70,
       category: "AI/ML",
+      icon: Target,
       color: "from-violet-500 to-purple-500",
     },
   ]
@@ -262,6 +322,7 @@ export default function EnhancedKashifPortfolio() {
       impact: "75% reduction in screening time",
       status: "Completed",
       type: "Academic Project",
+      icon: UserCheck,
       gradient: "from-blue-600 via-purple-600 to-indigo-800",
       stats: { resumes: "1K+", accuracy: "87%", efficiency: "+75%" },
       features: ["Resume Parsing", "Skill Extraction", "Automated Ranking", "Match Scoring"],
@@ -274,6 +335,7 @@ export default function EnhancedKashifPortfolio() {
       impact: "Real-time sentiment insights",
       status: "In Progress",
       type: "Learning Project",
+      icon: TrendingUp,
       gradient: "from-emerald-600 via-teal-600 to-cyan-800",
       stats: { feedback: "500+", accuracy: "82%", insights: "Real-time" },
       features: ["Sentiment Classification", "Emotion Detection", "Trend Analysis", "Visual Dashboard"],
@@ -286,6 +348,7 @@ export default function EnhancedKashifPortfolio() {
       impact: "24/7 HR support automation",
       status: "Development",
       type: "Capstone Project",
+      icon: FileText,
       gradient: "from-orange-600 via-red-600 to-rose-800",
       stats: { queries: "200+", response: "Instant", availability: "24/7" },
       features: ["Intent Recognition", "Policy Q&A", "Multi-language", "Learning Capability"],
@@ -297,6 +360,7 @@ export default function EnhancedKashifPortfolio() {
       title: "B.E Computer Systems Engineering",
       organization: "University",
       year: "2024",
+      icon: GraduationCap,
       color: "from-blue-500 to-indigo-600",
       description: "Specialized in AI and Machine Learning",
     },
@@ -304,6 +368,7 @@ export default function EnhancedKashifPortfolio() {
       title: "Science & Engineering Associate",
       organization: "Current Role - HR AI Engineer",
       year: "2025",
+      icon: Rocket,
       color: "from-green-500 to-emerald-600",
       description: "AI Engineer in HR Department",
     },
@@ -311,6 +376,7 @@ export default function EnhancedKashifPortfolio() {
       title: "Machine Learning Certification",
       organization: "Coursera - Stanford",
       year: "2023",
+      icon: Brain,
       color: "from-purple-500 to-pink-600",
       description: "Andrew Ng's ML Course Completion",
     },
@@ -318,6 +384,7 @@ export default function EnhancedKashifPortfolio() {
       title: "Python for Data Science",
       organization: "IBM - Coursera",
       year: "2023",
+      icon: Code,
       color: "from-orange-500 to-red-600",
       description: "Data Science and Analytics Specialization",
     },
@@ -586,7 +653,7 @@ export default function EnhancedKashifPortfolio() {
                 </div>
                 <span className="relative z-10">Driving AI Innovation in HR</span>
                 <div className="relative">
-                  <div className="h-6 w-6 text-yellow-400 animate-pulse" />
+                  <Star className="h-6 w-6 text-yellow-400 animate-pulse" />
                   <div className="absolute inset-0 bg-yellow-400 rounded-full opacity-20 animate-ping" />
                 </div>
               </div>
@@ -603,9 +670,11 @@ export default function EnhancedKashifPortfolio() {
             </div>
 
             {/* Enhanced Typing Animation */}
-            <div className="mb-8">
-              <p className="text-3xl md:text-4xl text-transparent bg-gradient-to-r from-blue-300 via-purple-300 to-indigo-300 bg-clip-text font-medium">
-                AI Engineer | HR-AI Solutions Developer
+            <div className="mb-8 h-20 flex items-center justify-center">
+              <p className="text-3xl md:text-4xl text-transparent bg-gradient-to-r from-blue-300 via-purple-300 to-indigo-300 bg-clip-text font-medium relative">
+                {typingText}
+                <span className="animate-pulse text-white ml-1 text-4xl">|</span>
+                <div className="absolute inset-0 bg-gradient-to-r from-blue-400/20 to-purple-400/20 blur-xl opacity-50" />
               </p>
             </div>
 
@@ -628,7 +697,8 @@ export default function EnhancedKashifPortfolio() {
               >
                 <div className="absolute inset-0 bg-gradient-to-r from-white/20 via-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
                 <div className="absolute inset-0 bg-gradient-to-r from-blue-400/30 to-purple-400/30 opacity-0 group-hover:opacity-100 transition-opacity duration-500 blur-xl" />
-                Let's Connect & Learn
+                <Linkedin className="mr-4 h-7 w-7 relative z-10" />
+                <span className="relative z-10">Let's Connect & Learn</span>
                 <ArrowRight className="ml-4 h-7 w-7 group-hover:translate-x-2 transition-transform duration-500 relative z-10" />
               </Button>
               <Button
@@ -640,7 +710,8 @@ export default function EnhancedKashifPortfolio() {
                 onClick={() => handleButtonClick("https://github.com/Kashifmujeeb17")}
               >
                 <div className="absolute inset-0 bg-gradient-to-r from-white/10 via-blue-500/10 to-purple-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                View My Projects
+                <Github className="mr-4 h-7 w-7 relative z-10" />
+                <span className="relative z-10">View My Projects</span>
               </Button>
             </div>
 
@@ -650,24 +721,28 @@ export default function EnhancedKashifPortfolio() {
                 {
                   number: "2024",
                   label: "Graduation Year",
+                  icon: GraduationCap,
                   gradient: "from-blue-500 to-cyan-500",
                   description: "B.E. Computer Systems Engineering",
                 },
                 {
                   number: "AI Engineer",
                   label: "Current Role",
+                  icon: Brain,
                   gradient: "from-purple-500 to-pink-500",
                   description: "Science & Engineering Associate",
                 },
                 {
                   number: "HR Tech",
                   label: "Specialization",
+                  icon: Users,
                   gradient: "from-green-500 to-emerald-500",
                   description: "AI in Human Resources",
                 },
                 {
                   number: "ML/AI",
                   label: "Core Skills",
+                  icon: Zap,
                   gradient: "from-orange-500 to-red-500",
                   description: "Machine Learning & AI",
                 },
@@ -683,7 +758,7 @@ export default function EnhancedKashifPortfolio() {
                   <div
                     className={`w-16 h-16 bg-gradient-to-r ${stat.gradient} rounded-2xl flex items-center justify-center mb-6 mx-auto shadow-2xl group-hover:shadow-3xl transition-all duration-500 group-hover:scale-125 group-hover:rotate-12 relative overflow-hidden`}
                   >
-                    <div className="h-8 w-8 text-white relative z-10" />
+                    <stat.icon className="h-8 w-8 text-white relative z-10" />
                     <div className="absolute inset-0 bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                   </div>
                   <div className="text-xl font-bold text-white mb-3 relative z-10">{stat.number}</div>
@@ -731,7 +806,8 @@ export default function EnhancedKashifPortfolio() {
           <div className="max-w-7xl mx-auto">
             <div className="text-center mb-24">
               <div className="inline-flex items-center space-x-4 bg-gradient-to-r from-white/10 via-blue-500/20 to-purple-500/10 backdrop-blur-2xl text-white px-8 py-4 rounded-full text-lg font-medium mb-12 border border-white/30 shadow-2xl">
-                About Me
+                <Book className="h-6 w-6 text-blue-400 animate-pulse" />
+                <span>About Me</span>
                 <div className="w-2 h-2 bg-blue-400 rounded-full animate-ping" />
               </div>
               <h2 className="text-5xl md:text-6xl font-bold bg-gradient-to-r from-white via-blue-200 via-purple-200 to-indigo-200 bg-clip-text text-transparent mb-12 leading-tight">
@@ -747,6 +823,7 @@ export default function EnhancedKashifPortfolio() {
               <div className="space-y-10">
                 {[
                   {
+                    icon: Rocket,
                     title: "Current Role - AI Engineer",
                     description:
                       "Working as a Science & Engineering Associate in HR as an AI Engineer, where I'm applying my knowledge of machine learning and artificial intelligence to develop innovative HR solutions, automate processes, and create data-driven insights for better decision making.",
@@ -754,6 +831,7 @@ export default function EnhancedKashifPortfolio() {
                     features: ["AI Development", "HR Automation", "Data Analysis", "Machine Learning"],
                   },
                   {
+                    icon: GraduationCap,
                     title: "Academic Foundation",
                     description:
                       "Holds a B.E in Computer Systems Engineering, specializing in AI and machine learning. Applies strong theoretical knowledge to real-world HR challenges, contributing to the digital transformation of human resources through innovative technology solutions.",
@@ -773,7 +851,7 @@ export default function EnhancedKashifPortfolio() {
                         <div
                           className={`w-20 h-20 bg-gradient-to-r ${item.gradient} rounded-3xl flex items-center justify-center flex-shrink-0 shadow-2xl group-hover:shadow-3xl transition-all duration-500 group-hover:scale-110 group-hover:rotate-6 relative overflow-hidden`}
                         >
-                          <div className="h-10 w-10 text-white relative z-10" />
+                          <item.icon className="h-10 w-10 text-white relative z-10" />
                           <div className="absolute inset-0 bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                         </div>
                         <div className="flex-1">
@@ -800,7 +878,10 @@ export default function EnhancedKashifPortfolio() {
 
               <div className="space-y-10">
                 <div className="bg-white/10 backdrop-blur-2xl rounded-3xl p-10 border border-white/20 shadow-2xl">
-                  <h3 className="text-2xl font-bold text-white mb-10 flex items-center">Technical Skills Progress</h3>
+                  <h3 className="text-2xl font-bold text-white mb-10 flex items-center">
+                    <BarChart3 className="h-8 w-8 mr-4 text-blue-400" />
+                    Technical Skills Progress
+                  </h3>
                   <div className="space-y-8">
                     {[
                       { skill: "Python Programming", level: 90, color: "from-green-500 to-emerald-500" },
@@ -830,21 +911,25 @@ export default function EnhancedKashifPortfolio() {
                 <div className="grid grid-cols-2 gap-6">
                   {[
                     {
+                      icon: Brain,
                       title: "AI/ML",
                       subtitle: "Core Expertise",
                       gradient: "from-purple-500 to-pink-600",
                     },
                     {
+                      icon: Code,
                       title: "Programming",
                       subtitle: "Python & More",
                       gradient: "from-green-500 to-emerald-600",
                     },
                     {
+                      icon: Users,
                       title: "HR Tech",
                       subtitle: "Domain Focus",
                       gradient: "from-blue-500 to-indigo-600",
                     },
                     {
+                      icon: Zap,
                       title: "Innovation",
                       subtitle: "Forward-Thinking",
                       gradient: "from-orange-500 to-red-600",
@@ -860,7 +945,7 @@ export default function EnhancedKashifPortfolio() {
                       <div
                         className={`w-16 h-16 bg-gradient-to-r ${item.gradient} rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-2xl group-hover:shadow-3xl transition-all duration-500 group-hover:scale-125 group-hover:rotate-12 relative overflow-hidden`}
                       >
-                        <div className="h-8 w-8 text-white relative z-10" />
+                        <item.icon className="h-8 w-8 text-white relative z-10" />
                         <div className="absolute inset-0 bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                       </div>
                       <div className="text-lg font-bold text-white mb-2 relative z-10">{item.title}</div>
@@ -884,7 +969,8 @@ export default function EnhancedKashifPortfolio() {
           <div className="max-w-7xl mx-auto">
             <div className="text-center mb-24">
               <div className="inline-flex items-center space-x-4 bg-gradient-to-r from-white/10 via-blue-500/20 to-purple-500/10 backdrop-blur-2xl text-white px-8 py-4 rounded-full text-lg font-medium mb-12 border border-white/30 shadow-2xl">
-                My Skills
+                <Brain className="h-6 w-6 text-purple-400 animate-pulse" />
+                <span>My Skills</span>
                 <div className="w-2 h-2 bg-purple-400 rounded-full animate-ping" />
               </div>
               <h2 className="text-5xl md:text-6xl font-bold bg-gradient-to-r from-white via-blue-200 via-purple-200 to-indigo-200 bg-clip-text text-transparent mb-12 leading-tight">
@@ -898,7 +984,10 @@ export default function EnhancedKashifPortfolio() {
 
             <div className="grid lg:grid-cols-2 gap-16 items-start">
               <div className="bg-white/10 backdrop-blur-2xl rounded-3xl p-10 border border-white/20 shadow-2xl">
-                <h3 className="text-2xl font-bold text-white mb-10 flex items-center">Technical Skills Progress</h3>
+                <h3 className="text-2xl font-bold text-white mb-10 flex items-center">
+                  <BarChart3 className="h-8 w-8 mr-4 text-blue-400" />
+                  Technical Skills Progress
+                </h3>
                 <div className="space-y-8">
                   {[
                     { skill: "Python Programming", level: 90, color: "from-green-500 to-emerald-500" },
@@ -928,21 +1017,25 @@ export default function EnhancedKashifPortfolio() {
               <div className="grid grid-cols-2 gap-6">
                 {[
                   {
+                    icon: Brain,
                     title: "AI/ML",
                     subtitle: "Core Expertise",
                     gradient: "from-purple-500 to-pink-600",
                   },
                   {
+                    icon: Code,
                     title: "Programming",
                     subtitle: "Python & More",
                     gradient: "from-green-500 to-emerald-600",
                   },
                   {
+                    icon: Users,
                     title: "HR Tech",
                     subtitle: "Domain Focus",
                     gradient: "from-blue-500 to-indigo-600",
                   },
                   {
+                    icon: Zap,
                     title: "Innovation",
                     subtitle: "Forward-Thinking",
                     gradient: "from-orange-500 to-red-600",
@@ -958,7 +1051,7 @@ export default function EnhancedKashifPortfolio() {
                     <div
                       className={`w-16 h-16 bg-gradient-to-r ${item.gradient} rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-2xl group-hover:shadow-3xl transition-all duration-500 group-hover:scale-125 group-hover:rotate-12 relative overflow-hidden`}
                     >
-                      <div className="h-8 w-8 text-white relative z-10" />
+                      <item.icon className="h-8 w-8 text-white relative z-10" />
                       <div className="absolute inset-0 bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                     </div>
                     <div className="text-lg font-bold text-white mb-2 relative z-10">{item.title}</div>
@@ -981,7 +1074,8 @@ export default function EnhancedKashifPortfolio() {
           <div className="max-w-7xl mx-auto">
             <div className="text-center mb-24">
               <div className="inline-flex items-center space-x-4 bg-gradient-to-r from-white/10 via-blue-500/20 to-purple-500/10 backdrop-blur-2xl text-white px-8 py-4 rounded-full text-lg font-medium mb-12 border border-white/30 shadow-2xl">
-                My Experience & Achievements
+                <Rocket className="h-6 w-6 text-orange-400 animate-pulse" />
+                <span>My Experience & Achievements</span>
                 <div className="w-2 h-2 bg-orange-400 rounded-full animate-ping" />
               </div>
               <h2 className="text-5xl md:text-6xl font-bold bg-gradient-to-r from-white via-blue-200 via-purple-200 to-indigo-200 bg-clip-text text-transparent mb-12 leading-tight">
@@ -1007,7 +1101,7 @@ export default function EnhancedKashifPortfolio() {
                     <div
                       className={`w-18 h-18 bg-gradient-to-r ${achievement.color} rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-2xl group-hover:shadow-3xl transition-all duration-500 group-hover:scale-125 group-hover:rotate-12 relative overflow-hidden`}
                     >
-                      <div className="h-9 w-9 text-white relative z-10" />
+                      <achievement.icon className="h-9 w-9 text-white relative z-10" />
                       <div className="absolute inset-0 bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                     </div>
                     <h4 className="font-bold text-white mb-3 text-lg relative z-10">{achievement.title}</h4>
@@ -1032,7 +1126,8 @@ export default function EnhancedKashifPortfolio() {
           <div className="max-w-7xl mx-auto">
             <div className="text-center mb-24">
               <div className="inline-flex items-center space-x-4 bg-gradient-to-r from-white/10 via-blue-500/20 to-purple-500/10 backdrop-blur-2xl text-white px-8 py-4 rounded-full text-lg font-medium mb-12 border border-white/30 shadow-2xl">
-                My HR-AI Projects
+                <Code className="h-6 w-6 text-green-400 animate-pulse" />
+                <span>My HR-AI Projects</span>
                 <div className="w-2 h-2 bg-green-400 rounded-full animate-ping" />
               </div>
               <h2 className="text-5xl md:text-6xl font-bold bg-gradient-to-r from-white via-blue-200 via-purple-200 to-indigo-200 bg-clip-text text-transparent mb-12 leading-tight">
@@ -1056,7 +1151,7 @@ export default function EnhancedKashifPortfolio() {
                     <div
                       className={`w-16 h-16 bg-gradient-to-r ${project.gradient} rounded-2xl flex items-center justify-center mb-6 shadow-2xl group-hover:shadow-3xl transition-all duration-500 group-hover:scale-110 group-hover:rotate-6 relative overflow-hidden`}
                     >
-                      <div className="h-8 w-8 text-white relative z-10" />
+                      <project.icon className="h-8 w-8 text-white relative z-10" />
                       <div className="absolute inset-0 bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                     </div>
                     <h3 className="text-2xl font-bold text-white mb-4 relative z-10">{project.title}</h3>
@@ -1094,7 +1189,8 @@ export default function EnhancedKashifPortfolio() {
         <div className="container mx-auto">
           <div className="max-w-4xl mx-auto text-center">
             <div className="inline-flex items-center space-x-4 bg-gradient-to-r from-white/10 via-blue-500/20 to-purple-500/10 backdrop-blur-2xl text-white px-8 py-4 rounded-full text-lg font-medium mb-12 border border-white/30 shadow-2xl">
-              Get in Touch
+              <Mail className="h-6 w-6 text-cyan-400 animate-pulse" />
+              <span>Get in Touch</span>
               <div className="w-2 h-2 bg-cyan-400 rounded-full animate-ping" />
             </div>
             <h2 className="text-5xl md:text-6xl font-bold bg-gradient-to-r from-white via-blue-200 via-purple-200 to-indigo-200 bg-clip-text text-transparent mb-12 leading-tight">
@@ -1114,7 +1210,8 @@ export default function EnhancedKashifPortfolio() {
               >
                 <div className="absolute inset-0 bg-gradient-to-r from-white/20 via-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
                 <div className="absolute inset-0 bg-gradient-to-r from-blue-400/30 to-purple-400/30 opacity-0 group-hover:opacity-100 transition-opacity duration-500 blur-xl" />
-                Send Me an Email
+                <Mail className="mr-4 h-7 w-7 relative z-10" />
+                <span className="relative z-10">Send Me an Email</span>
                 <ArrowRight className="ml-4 h-7 w-7 group-hover:translate-x-2 transition-transform duration-500 relative z-10" />
               </Button>
             </div>
@@ -1147,34 +1244,28 @@ export default function EnhancedKashifPortfolio() {
               innovative solutions and learning from industry experts while building the future of HR technology.
             </p>
             <div className="flex justify-center space-x-8 mb-12">
-              <a
-                href="https://github.com/Kashifmujeeb17"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-white/80 hover:text-white transition-all duration-300 text-lg font-medium"
-                onMouseEnter={() => handleMouseEnter("link")}
-                onMouseLeave={handleMouseLeave}
-              >
-                GitHub
-              </a>
-              <a
-                href="https://www.linkedin.com/in/kashif-mujeeb-64789616a/"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-white/80 hover:text-white transition-all duration-300 text-lg font-medium"
-                onMouseEnter={() => handleMouseEnter("link")}
-                onMouseLeave={handleMouseLeave}
-              >
-                LinkedIn
-              </a>
-              <a
-                href="mailto:your.email@example.com"
-                className="text-white/80 hover:text-white transition-all duration-300 text-lg font-medium"
-                onMouseEnter={() => handleMouseEnter("link")}
-                onMouseLeave={handleMouseLeave}
-              >
-                Email
-              </a>
+              {[
+                { icon: Github, link: "https://github.com/Kashifmujeeb17", gradient: "from-gray-600 to-gray-800" },
+                {
+                  icon: Linkedin,
+                  link: "https://www.linkedin.com/in/kashif-mujeeb-64789616a/",
+                  gradient: "from-blue-500 to-blue-700",
+                },
+                { icon: Mail, link: "mailto:", gradient: "from-green-500 to-emerald-600" },
+              ].map((social, index) => (
+                <Button
+                  key={index}
+                  variant="ghost"
+                  size="lg"
+                  className={`text-white hover:text-white w-16 h-16 rounded-2xl transition-all duration-500 transform hover:scale-125 bg-gradient-to-r ${social.gradient} hover:shadow-2xl cursor-pointer relative overflow-hidden group`}
+                  onMouseEnter={() => handleMouseEnter("button")}
+                  onMouseLeave={handleMouseLeave}
+                  onClick={() => handleButtonClick(social.link)}
+                >
+                  <social.icon className="h-8 w-8 relative z-10" />
+                  <div className="absolute inset-0 bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                </Button>
+              ))}
             </div>
             <div className="border-t border-white/20 pt-12">
               <p className="text-white/60 text-lg">© 2024 Kashif Mujeeb. Dedicated to HR-AI innovation.</p>
